@@ -379,22 +379,42 @@ withProgress(message = 'Running Replications', value = 0, {
       }
       if(scale.y == "continuous"){
         if(n.x != 0){
-          l.y = lm(as.formula(paste("y ~", paste(c("t", "m", "t:m", colnames(X)), collapse = " + "))), data = data)
+          if(btm.y == 0){
+            l.y = lm(as.formula(paste("y ~", paste(c("t", "m", colnames(X)), collapse = " + "))), data = data)
+          } else {
+            l.y = lm(as.formula(paste("y ~", paste(c("t", "m", "t:m", colnames(X)), collapse = " + "))), data = data)
+          }
         } else {
-          l.y = lm(as.formula(paste("y ~", paste(c("t", "m", "t:m"), collapse = " + "))), data = data)
+          if(btm.y == 0){
+            l.y = lm(as.formula(paste("y ~", paste(c("t", "m"), collapse = " + "))), data = data)
+          } else {
+            l.y = lm(as.formula(paste("y ~", paste(c("t", "m", "t:m"), collapse = " + "))), data = data)
+          }
         }
       } else {
         if(n.x != 0){
-          l.y = glm(as.formula(paste("y ~", paste(c("t", "m", "t:m", colnames(X)), collapse = " + "))), data = data, family = binomial(link = "probit"))
+          if(btm.y == 0){
+            l.y = glm(as.formula(paste("y ~", paste(c("t", "m", colnames(X)), collapse = " + "))), data = data, family = binomial(link = "probit"))
+          } else {
+            l.y = glm(as.formula(paste("y ~", paste(c("t", "m", "t:m", colnames(X)), collapse = " + "))), data = data, family = binomial(link = "probit"))
+          }
         } else {
-          l.y = glm(as.formula(paste("y ~", paste(c("t", "m", "t:m"), collapse = " + "))), data = data, family = binomial(link = "probit"))
+          if(btm.y == 0){
+            l.y = glm(as.formula(paste("y ~", paste(c("t", "m"), collapse = " + "))), data = data, family = binomial(link = "probit"))
+          } else {
+            l.y = glm(as.formula(paste("y ~", paste(c("t", "m", "t:m"), collapse = " + "))), data = data, family = binomial(link = "probit"))
+          }
         }
       }
       
       # Simulate draws of mediator and outcome model coefficients from multivariate normal distribution
       mcmc.m = mvrnorm(mcmcReps, coef(l.m), vcov(l.m), empirical = FALSE)
       mcmc.y = mvrnorm(mcmcReps, coef(l.y), vcov(l.y), empirical = FALSE)
-      
+      if(btm.y == 0){
+        mcmc.y = cbind(mcmc.y, 0)
+        colnames(mcmc.y)[ncol(mcmc.y)] = "t:m"
+      }
+        
       # Calculate causal effects
       if(scale.m == "continuous" & scale.y == "continuous"){
         if(effect == "TIE")
